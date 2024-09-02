@@ -1,4 +1,4 @@
-## Chris Titus Tech's Diablo II Ressurected Loot Filter
+## Chris Titus Tech's Diablo II Resurected Loot Filter
 
 This is a loot filter for Diablo II Resurrected. It's designed to be a simple, clean, and easy to read loot filter that highlights the most important items. Works on battle.net and single player.
 
