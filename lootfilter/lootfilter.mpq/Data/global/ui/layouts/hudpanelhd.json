@@ -147,7 +147,7 @@
             "fields": {
                 "filename": "PANEL/HUD_02/front_panel",
                 "rect": { "x": 34 },
-                "transparency": 0.5, // 투명도 50%. (투명도 없음-1.0 / 완전투명- 0.0)
+                "transparency": 0.5,
             },
         },
         {
