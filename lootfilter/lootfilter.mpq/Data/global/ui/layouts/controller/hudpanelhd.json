@@ -72,7 +72,7 @@
             "fields": {
                 "rect": { "x": 537, "y": 206 },
                 "hitMargin": { "top": 10, "bottom": 7 },
-                "filename": "PANEL/HUD_02/experience_bar"
+                "filename": "Controller/HUD/Expbar"
             },
             "children": [
                 {
@@ -351,7 +351,7 @@
             "fields": {
                 "rect": { "x": 1411, "y": 265 },
                 "filename": "Controller/HUD/LevelUpButton",
-                "type": [ "skills", "stats", "quests" ],
+                "type": [ "skills", "stats" ],
                 "labels": [ "", "@strnewskl", "@strlvlup", "@SkillAndStatLevelUp" ],
                 "tooltipOffset": { "y": -6 },
                 "disabledFrame": 2,

@@ -147,7 +147,7 @@
             "fields": {
                 "filename": "PANEL/HUD_02/front_panel",
                 "rect": { "x": 34 },
-                "transparency": 0.5,
+                "transparency": 0.8,
             },
         },
         {
