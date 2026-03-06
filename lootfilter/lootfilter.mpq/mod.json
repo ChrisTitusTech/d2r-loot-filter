@@ -1,0 +1,48 @@
+{
+  "$schema": "../config-schema.json",
+  "name": "D2R Simple Loot Filter",
+  "description": "A simple loot filter originally created by Cbraqz; edited/fixed/modified and converted to D2RMM by kabobist",
+  "author": "Cbraqz - kabobist - ChrisTitusTech",
+  "version": "1.12",
+  "website": "https://www.nexusmods.com/diablo2resurrected/mods/205",
+  "config": [
+    {
+      "id": "toggleall",
+      "name": "Toggle All",
+      "type": "section",
+      "allowToggleAll": true,
+      "defaultExpanded": true,
+      "description": "Toggles all the changes - Side note: if you want to play online add -mod lootfilter -txt to your additional parameters in the battle.net launcher and launch it there instead of lootfilter.",
+      "children": [    
+        {
+        "id": "itemNames",
+        "name": "Item Names (item-names.json)",
+        "type": "checkbox",
+        "defaultValue": true,
+        "description": "This is where the majority of the action happens, preferably keep it enabled."
+        },
+        {
+        "id": "itemModifiers",
+        "name": "Item Modifiers (item-modifiers.json)",
+        "type": "checkbox",
+        "defaultValue": true,
+        "description": "This is the modifiers for items, FCR, FHR, Cold Resist, etc."
+        },
+        {
+        "id": "itemNameaffixes",
+        "name": "Item Name Affixes (item-nameaffixes.json)",
+        "type": "checkbox",
+        "defaultValue": true,
+        "description": "This just blacks out damaged, crude, etc items with a grey dot at the beginning."
+        },
+        {
+        "id": "itemRunes",
+        "name": "Item Runes (item-runes.json)",
+        "type": "checkbox",
+        "defaultValue": true,
+        "description": "This is where we modify runes, as the name suggests."
+        }
+     ]
+    }
+  ]
+}
