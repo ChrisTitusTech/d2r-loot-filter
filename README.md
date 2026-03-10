@@ -25,3 +25,28 @@ Enable the filter by adding `-mod lootfilter -txt` to your Diablo II Resurrected
 ![gameset1](./gameset1.png)
 
 ![gameset2](./gameset2.png)
+
+### Installer
+
+The Windows installer lives in [installer/D2RInstaller.csproj](installer/D2RInstaller.csproj) and is a WinUI 3 desktop app.
+The GUI is started by [installer/App.cs](installer/App.cs) and the generated WinUI entry point using the `Microsoft.WindowsAppSDK` dependency declared in [installer/D2RInstaller.csproj](installer/D2RInstaller.csproj).
+
+### Building Dependencies
+
+Install the required tools with winget:
+
+```powershell
+winget install --id Microsoft.DotNet.SDK.10 --exact --accept-package-agreements --accept-source-agreements
+winget install --id Microsoft.VisualStudio.2022.Community --exact --accept-package-agreements --accept-source-agreements
+```
+
+Why Visual Studio is required:
+
+WinUI 3 desktop builds depend on AppX/MSIX MSBuild task assemblies such as `Microsoft.Build.AppxPackage.dll` and `Microsoft.Build.Packaging.Pri.Tasks.dll`. Those tasks are provided by the Visual Studio installation, not by the standalone .NET SDK.
+
+Build the installer from the repository root:
+
+```powershell
+cd installer
+dotnet build D2RInstaller.csproj
+```
