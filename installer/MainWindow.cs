@@ -1,7 +1,8 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.UI;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Windows.ApplicationModel.DataTransfer;
@@ -13,16 +14,66 @@ namespace D2RInstaller;
 public sealed partial class MainWindow : Window
 {
     private string? _installedPath;
+    private bool _isInstalling;
+    private int _statusRefreshVersion;
 
     public MainWindow()
     {
         Title = "D2R Loot Filter Installer";
         InitializeComponent();
+        SetWindowIcon();
+        ConfigureWindowChrome();
+        LaunchMaximized();
         LaunchArgsTextBox.Text = Installer.LaunchOptionsHint;
-        LoadSuggestedGamePath();
+        ResetInstallStatusDetails();
+        _ = LoadSuggestedGamePathAsync();
     }
 
-    private void LoadSuggestedGamePath()
+    private void SetWindowIcon()
+    {
+        var windowId = Win32Interop.GetWindowIdFromWindow(WindowNative.GetWindowHandle(this));
+        var appWindow = AppWindow.GetFromWindowId(windowId);
+        var iconPath = Path.Combine(AppContext.BaseDirectory, "images", "d2r-lod.ico");
+
+        if (File.Exists(iconPath))
+            appWindow.SetIcon(iconPath);
+    }
+
+    private void ConfigureWindowChrome()
+    {
+        var windowId = Win32Interop.GetWindowIdFromWindow(WindowNative.GetWindowHandle(this));
+        var appWindow = AppWindow.GetFromWindowId(windowId);
+
+        if (!AppWindowTitleBar.IsCustomizationSupported())
+            return;
+
+        var titleBar = appWindow.TitleBar;
+        titleBar.BackgroundColor = ColorHelper.FromArgb(0xFF, 0x12, 0x10, 0x11);
+        titleBar.ForegroundColor = ColorHelper.FromArgb(0xFF, 0xF2, 0xDE, 0xC2);
+        titleBar.ButtonBackgroundColor = ColorHelper.FromArgb(0xFF, 0x12, 0x10, 0x11);
+        titleBar.ButtonForegroundColor = ColorHelper.FromArgb(0xFF, 0xF2, 0xDE, 0xC2);
+        titleBar.ButtonHoverBackgroundColor = ColorHelper.FromArgb(0xFF, 0x2B, 0x17, 0x0E);
+        titleBar.ButtonHoverForegroundColor = Colors.White;
+        titleBar.ButtonPressedBackgroundColor = ColorHelper.FromArgb(0xFF, 0x40, 0x24, 0x16);
+        titleBar.ButtonPressedForegroundColor = Colors.White;
+        titleBar.InactiveBackgroundColor = ColorHelper.FromArgb(0xFF, 0x19, 0x16, 0x17);
+        titleBar.InactiveForegroundColor = ColorHelper.FromArgb(0xFF, 0xC7, 0xB0, 0x8E);
+        titleBar.ButtonInactiveBackgroundColor = ColorHelper.FromArgb(0xFF, 0x19, 0x16, 0x17);
+        titleBar.ButtonInactiveForegroundColor = ColorHelper.FromArgb(0xFF, 0xC7, 0xB0, 0x8E);
+    }
+
+    private void LaunchMaximized()
+    {
+        var windowId = Win32Interop.GetWindowIdFromWindow(WindowNative.GetWindowHandle(this));
+        var appWindow = AppWindow.GetFromWindowId(windowId);
+
+        if (appWindow.Presenter is OverlappedPresenter overlappedPresenter)
+        {
+            overlappedPresenter.Maximize();
+        }
+    }
+
+    private async Task LoadSuggestedGamePathAsync()
     {
         var resolution = Installer.FindD2RInstallPath();
         if (resolution.Succeeded && resolution.GamePath is not null)
@@ -31,8 +82,9 @@ public sealed partial class MainWindow : Window
             ShowPathStatus(
                 InfoBarSeverity.Success,
                 "Game folder detected.",
-                "Steam library detection found Diablo II: Resurrected automatically.");
+                "Auto-detect found Diablo II: Resurrected automatically.");
             UpdateInstallDestination(resolution.GamePath);
+            await RefreshInstallStatusAsync(resolution.GamePath);
             return;
         }
 
@@ -50,7 +102,7 @@ public sealed partial class MainWindow : Window
 
     private void AutoDetectButton_Click(object sender, RoutedEventArgs e)
     {
-        LoadSuggestedGamePath();
+        _ = LoadSuggestedGamePathAsync();
     }
 
     private async void BrowseButton_Click(object sender, RoutedEventArgs e)
@@ -74,9 +126,11 @@ public sealed partial class MainWindow : Window
         if (!resolution.Succeeded || resolution.GamePath is null)
             return;
 
+        _isInstalling = true;
         SetInstallState(isInstalling: true);
         ShowInstallStatus(InfoBarSeverity.Informational, "Installing", "Downloading and extracting the latest loot filter files.");
         UpdateProgress(new InstallProgress(InstallStep.DownloadingMod, "Starting install...", 0));
+        var installCompleted = false;
 
         try
         {
@@ -91,12 +145,12 @@ public sealed partial class MainWindow : Window
             }
 
             _installedPath = result.InstalledPath;
-            OpenInstallFolderButton.IsEnabled = Directory.Exists(_installedPath);
+            installCompleted = true;
             UpdateProgress(new InstallProgress(InstallStep.Done, "Loot filter installed successfully.", 100));
             ShowInstallStatus(
                 InfoBarSeverity.Success,
                 "Install complete",
-                $"Installed to {_installedPath}");
+                $"Installed tag {result.InstalledTag} to {_installedPath}");
             UpdateInstallDestination(resolution.GamePath);
         }
         catch (Exception ex)
@@ -105,8 +159,12 @@ public sealed partial class MainWindow : Window
         }
         finally
         {
+            _isInstalling = false;
             SetInstallState(isInstalling: false);
         }
+
+        if (installCompleted)
+            await RefreshInstallStatusAsync(resolution.GamePath);
     }
 
     private void CopyLaunchArgsButton_Click(object sender, RoutedEventArgs e)
@@ -117,30 +175,14 @@ public sealed partial class MainWindow : Window
         ShowInstallStatus(InfoBarSeverity.Success, "Copied", "Launch arguments copied to the clipboard.");
     }
 
-    private void OpenInstallFolderButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (string.IsNullOrWhiteSpace(_installedPath) || !Directory.Exists(_installedPath))
-        {
-            ShowInstallStatus(InfoBarSeverity.Warning, "Folder unavailable", "Run the installer successfully before opening the folder.");
-            return;
-        }
-
-        Process.Start(new ProcessStartInfo
-        {
-            FileName = "explorer.exe",
-            Arguments = _installedPath,
-            UseShellExecute = true,
-        });
-    }
-
     private PathResolution RefreshResolvedPath(bool showValidationError)
     {
         var resolution = Installer.ResolveGamePath(GamePathTextBox.Text);
         if (!resolution.Succeeded || resolution.GamePath is null)
         {
             _installedPath = null;
-            OpenInstallFolderButton.IsEnabled = false;
             InstallDestinationText.Text = "Select a valid game folder to preview the install path.";
+            ResetInstallStatusDetails();
 
             if (showValidationError)
             {
@@ -158,6 +200,7 @@ public sealed partial class MainWindow : Window
             InfoBarSeverity.Success,
             "Path looks good.",
             "The installer will place the mod inside the Diablo II: Resurrected mods folder.");
+        _ = RefreshInstallStatusAsync(resolution.GamePath);
         return resolution;
     }
 
@@ -182,6 +225,79 @@ public sealed partial class MainWindow : Window
             _ => "Installing"
         };
         InstallMessageText.Text = progress.Message;
+    }
+
+    private async Task RefreshInstallStatusAsync(string gamePath)
+    {
+        var requestVersion = ++_statusRefreshVersion;
+
+        InstalledTagText.Text = "Checking...";
+        LatestTagText.Text = "Checking...";
+
+        if (!_isInstalling)
+        {
+            InstallStepText.Text = "Checking install status";
+            InstallMessageText.Text = "Inspecting the installed files and the latest GitHub tag.";
+        }
+
+        var status = await Installer.GetInstalledModStatusAsync(gamePath);
+        if (requestVersion != _statusRefreshVersion || _isInstalling)
+            return;
+
+        ApplyInstallStatus(status);
+    }
+
+    private void ApplyInstallStatus(InstalledModStatus status)
+    {
+        InstalledTagText.Text = status.InstalledTag ?? (status.IsInstalled ? "Unknown" : "Not installed");
+        LatestTagText.Text = status.LatestTag ?? "Unavailable";
+
+        if (!string.IsNullOrWhiteSpace(status.ErrorMessage))
+            ShowInstallStatus(InfoBarSeverity.Warning, "GitHub tag check unavailable", status.ErrorMessage);
+
+        switch (status.State)
+        {
+            case InstalledModState.NotInstalled:
+                InstallStepText.Text = "Not installed";
+                InstallMessageText.Text = status.LatestTag is null
+                    ? "No loot filter install was found for this game folder."
+                    : $"No loot filter install was found. Latest GitHub tag: {status.LatestTag}.";
+                InstallProgressBar.Value = 0;
+                InstallPercentText.Text = "0%";
+                break;
+            case InstalledModState.InstalledUnknownVersion:
+                InstallStepText.Text = "Installed version unknown";
+                InstallMessageText.Text = status.LatestTag is null
+                    ? "Loot filter files were found, but no installer tag metadata was found."
+                    : $"Loot filter files were found, but no installer tag metadata was found. Latest GitHub tag: {status.LatestTag}.";
+                InstallProgressBar.Value = 0;
+                InstallPercentText.Text = "0%";
+                break;
+            case InstalledModState.InstalledOutdated:
+                InstallStepText.Text = "Update available";
+                InstallMessageText.Text = status.LatestTag is null
+                    ? $"Loot filter tag {status.InstalledTag} is installed."
+                    : $"Loot filter tag {status.InstalledTag} is installed. Latest GitHub tag: {status.LatestTag}.";
+                InstallProgressBar.Value = 0;
+                InstallPercentText.Text = "0%";
+                break;
+            case InstalledModState.InstalledCurrent:
+                InstallStepText.Text = "Installed and current";
+                InstallMessageText.Text = $"Loot filter tag {status.InstalledTag} is already installed and matches the latest GitHub tag.";
+                InstallProgressBar.Value = 100;
+                InstallPercentText.Text = "100%";
+                break;
+        }
+    }
+
+    private void ResetInstallStatusDetails()
+    {
+        InstalledTagText.Text = "Not checked";
+        LatestTagText.Text = "Not checked";
+        InstallProgressBar.Value = 0;
+        InstallPercentText.Text = "0%";
+        InstallStepText.Text = "Ready to install";
+        InstallMessageText.Text = "Use auto-detect or browse to select the game folder, then install the latest tagged loot filter release.";
     }
 
     private void SetInstallState(bool isInstalling)
