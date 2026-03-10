@@ -1,0 +1,63 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag and increment version
+        id: version
+        run: |
+          LATEST_TAG=$(git tag --sort=-version:refname | grep -E '^[0-9]+\.[0-9]+$' | head -n 1)
+          TODAY=$(date -u +%Y-%m-%d)
+
+          if [ -n "$LATEST_TAG" ]; then
+            TAG_DATE=$(git log -1 --format=%ai "refs/tags/$LATEST_TAG" 2>/dev/null | cut -d' ' -f1)
+            if [ "$TAG_DATE" = "$TODAY" ]; then
+              echo "A release was already created today ($LATEST_TAG). Skipping."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
+          if [ -z "$LATEST_TAG" ]; then
+            NEW_TAG="0.1"
+          else
+            MAJOR=$(echo "$LATEST_TAG" | cut -d. -f1)
+            MINOR=$(echo "$LATEST_TAG" | cut -d. -f2)
+            NEW_MINOR=$((MINOR + 1))
+            NEW_TAG="${MAJOR}.${NEW_MINOR}"
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
+          echo "New tag: $NEW_TAG"
+
+      - name: Zip lootfilter folder
+        if: steps.version.outputs.skip == 'false'
+        run: |
+          zip -r titus-mods.zip lootfilter/
+
+      - name: Create and publish release
+        if: steps.version.outputs.skip == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.new_tag }}
+          name: Titus Mods ${{ steps.version.outputs.new_tag }}
+          generate_release_notes: true
+          body: |
+            **Installation:** Extract `titus-mods.zip` and place the `lootfilter` folder into your Diablo II Resurrected mods directory.
+          files: titus-mods.zip
+          draft: false
+          prerelease: false
