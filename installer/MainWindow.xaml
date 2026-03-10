@@ -366,6 +366,10 @@
                                     TextWrapping="Wrap"
                                     Foreground="#C7B08E"
                                     Text="There are no options from Blizzard to load multiple mods so all these have to be in one package. This means we can't separate out individual mods. I tried to strike a good balance between functionality and simplicity." />
+                                <TextBlock
+                                    TextWrapping="Wrap"
+                                    Foreground="#C7B08E"
+                                    Text="      - Chris Titus Tech" />
                             </StackPanel>
                         </Border>
                     </StackPanel>
