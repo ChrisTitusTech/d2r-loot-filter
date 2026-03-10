@@ -35,6 +35,13 @@ public readonly record struct InstallResult(bool Succeeded, string? InstalledPat
     public static InstallResult Failure(string errorMessage) => new(false, null, null, errorMessage);
 }
 
+public readonly record struct UninstallResult(bool Succeeded, string? RemovedPath, string? ErrorMessage)
+{
+    public static UninstallResult Success(string removedPath) => new(true, removedPath, null);
+
+    public static UninstallResult Failure(string errorMessage) => new(false, null, errorMessage);
+}
+
 public enum InstalledModState
 {
     NotInstalled,
@@ -378,6 +385,23 @@ public static class Installer
         {
             TryDeleteFile(tempZipPath);
             TryDeleteDirectory(tempExtractPath);
+        }
+    }
+
+    public static UninstallResult UninstallLootFilter(string gamePath)
+    {
+        var installPath = GetInstallPath(gamePath);
+        if (!Directory.Exists(installPath))
+            return UninstallResult.Failure("No installed mods folder was found for this game path.");
+
+        try
+        {
+            TryDeleteDirectory(installPath);
+            return UninstallResult.Success(installPath);
+        }
+        catch (Exception ex)
+        {
+            return UninstallResult.Failure($"Uninstall failed: {ex.Message}");
         }
     }
 

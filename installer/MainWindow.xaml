@@ -238,7 +238,7 @@
                                             x:Name="InstallMessageText"
                                             TextWrapping="Wrap"
                                             Foreground="#C7B08E"
-                                            Text="Use auto-detect or browse to select the game folder, then install the latest loot filter files." />
+                                            Text="Use auto-detect or browse to select the game folder, then install the latest mods." />
                                     </StackPanel>
 
                                     <TextBlock
@@ -257,16 +257,31 @@
                                     IsClosable="False"
                                     Severity="Informational" />
 
-                                <Button
-                                    x:Name="InstallButton"
-                                    HorizontalAlignment="Left"
-                                    Padding="24,10"
-                                    Background="#6F4A28"
-                                    BorderBrush="#C79A57"
-                                    BorderThickness="1"
-                                    Foreground="#F2DEC2"
-                                    Click="InstallButton_Click"
-                                    Content="Install Loot Filter" />
+                                <StackPanel
+                                    Orientation="Horizontal"
+                                    Spacing="12">
+                                    <Button
+                                        x:Name="InstallButton"
+                                        HorizontalAlignment="Left"
+                                        Padding="24,10"
+                                        Background="#6F4A28"
+                                        BorderBrush="#C79A57"
+                                        BorderThickness="1"
+                                        Foreground="#F2DEC2"
+                                        Click="InstallButton_Click"
+                                        Content="Install Mods" />
+                                    <Button
+                                        x:Name="UninstallButton"
+                                        HorizontalAlignment="Left"
+                                        Padding="24,10"
+                                        Background="#442018"
+                                        BorderBrush="#A85743"
+                                        BorderThickness="1"
+                                        Foreground="#F2DEC2"
+                                        Click="UninstallButton_Click"
+                                        Content="Uninstall Mods"
+                                        IsEnabled="False" />
+                                </StackPanel>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -317,19 +332,21 @@
                                     FontSize="24"
                                     FontWeight="SemiBold"
                                     Foreground="#F2DEC2"
-                                    Text="What this does" />
-                                <TextBlock
-                                    TextWrapping="Wrap"
-                                    Foreground="#C7B08E"
-                                    Text="1. Downloads the latest tagged GitHub release for the loot filter." />
-                                <TextBlock
-                                    TextWrapping="Wrap"
-                                    Foreground="#C7B08E"
-                                    Text="2. Checks whether the mod is already installed and compares its stored tag with the latest GitHub tag." />
-                                <TextBlock
-                                    TextWrapping="Wrap"
-                                    Foreground="#C7B08E"
-                                    Text="3. Replaces the existing lootfilter install with the latest tagged files and records the installed tag locally." />
+                                    Text="List of Mods Installed" />
+                                <StackPanel Spacing="0">
+                                    <TextBlock
+                                        TextWrapping="Wrap"
+                                        Foreground="#C7B08E"
+                                        Text="- Loot filter" />
+                                    <TextBlock
+                                        TextWrapping="Wrap"
+                                        Foreground="#C7B08E"
+                                        Text="- UI Revamp (EXP bar and minimal art)" />
+                                    <TextBlock
+                                        TextWrapping="Wrap"
+                                        Foreground="#C7B08E"
+                                        Text="- Remove error speech" />
+                                </StackPanel>
                             </StackPanel>
                         </Border>
 
@@ -344,15 +361,11 @@
                                     FontSize="24"
                                     FontWeight="SemiBold"
                                     Foreground="#F2DEC2"
-                                    Text="Requirements" />
+                                    Text="Notes:" />
                                 <TextBlock
                                     TextWrapping="Wrap"
                                     Foreground="#C7B08E"
-                                    Text="This installer targets the Windows version of Diablo II: Resurrected and expects a writable game directory." />
-                                <TextBlock
-                                    TextWrapping="Wrap"
-                                    Foreground="#C7B08E"
-                                    Text="If auto-detect fails, browse to the game folder manually and install again." />
+                                    Text="There are no options from Blizzard to load multiple mods so all these have to be in one package. This means we can't separate out individual mods. I tried to strike a good balance between functionality and simplicity." />
                             </StackPanel>
                         </Border>
                     </StackPanel>

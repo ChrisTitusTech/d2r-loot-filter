@@ -14,12 +14,13 @@ namespace D2RInstaller;
 public sealed partial class MainWindow : Window
 {
     private string? _installedPath;
-    private bool _isInstalling;
+    private bool _canUninstall;
+    private bool _isBusy;
     private int _statusRefreshVersion;
 
     public MainWindow()
     {
-        Title = "D2R Loot Filter Installer";
+        Title = "D2R Mods Installer";
         InitializeComponent();
         SetWindowIcon();
         ConfigureWindowChrome();
@@ -126,8 +127,8 @@ public sealed partial class MainWindow : Window
         if (!resolution.Succeeded || resolution.GamePath is null)
             return;
 
-        _isInstalling = true;
-        SetInstallState(isInstalling: true);
+        _isBusy = true;
+        UpdateActionButtons();
         ShowInstallStatus(InfoBarSeverity.Informational, "Installing", "Downloading and extracting the latest loot filter files.");
         UpdateProgress(new InstallProgress(InstallStep.DownloadingMod, "Starting install...", 0));
         var installCompleted = false;
@@ -159,11 +160,72 @@ public sealed partial class MainWindow : Window
         }
         finally
         {
-            _isInstalling = false;
-            SetInstallState(isInstalling: false);
+            _isBusy = false;
+            UpdateActionButtons();
         }
 
         if (installCompleted)
+            await RefreshInstallStatusAsync(resolution.GamePath);
+    }
+
+    private async void UninstallButton_Click(object sender, RoutedEventArgs e)
+    {
+        var resolution = RefreshResolvedPath(showValidationError: true);
+        if (!resolution.Succeeded || resolution.GamePath is null)
+            return;
+
+        var dialog = new ContentDialog
+        {
+            XamlRoot = RootGrid.XamlRoot,
+            Title = "Remove installed mods?",
+            Content = $"This deletes the installed mods folder at:{Environment.NewLine}{InstallDestinationText.Text}",
+            PrimaryButtonText = "Uninstall",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close
+        };
+
+        var dialogResult = await dialog.ShowAsync();
+        if (dialogResult != ContentDialogResult.Primary)
+            return;
+
+        _isBusy = true;
+        UpdateActionButtons();
+        InstallProgressBar.IsIndeterminate = true;
+        InstallStepText.Text = "Removing installed mods";
+        InstallMessageText.Text = "Deleting the installed mods folder from the Diablo II: Resurrected mods directory.";
+        InstallPercentText.Text = "...";
+        ShowInstallStatus(InfoBarSeverity.Informational, "Uninstalling", "Removing the installed mods folder.");
+        var uninstallCompleted = false;
+
+        try
+        {
+            var result = await Task.Run(() => Installer.UninstallLootFilter(resolution.GamePath));
+            if (!result.Succeeded || result.RemovedPath is null)
+            {
+                ShowInstallStatus(
+                    InfoBarSeverity.Error,
+                    "Uninstall failed",
+                    result.ErrorMessage ?? "The installed mods folder could not be removed.");
+                return;
+            }
+
+            _installedPath = null;
+            _canUninstall = false;
+            uninstallCompleted = true;
+            ShowInstallStatus(InfoBarSeverity.Success, "Uninstall complete", $"Removed {result.RemovedPath}");
+        }
+        catch (Exception ex)
+        {
+            ShowInstallStatus(InfoBarSeverity.Error, "Uninstall failed", ex.Message);
+        }
+        finally
+        {
+            InstallProgressBar.IsIndeterminate = false;
+            _isBusy = false;
+            UpdateActionButtons();
+        }
+
+        if (uninstallCompleted)
             await RefreshInstallStatusAsync(resolution.GamePath);
     }
 
@@ -181,6 +243,7 @@ public sealed partial class MainWindow : Window
         if (!resolution.Succeeded || resolution.GamePath is null)
         {
             _installedPath = null;
+            _canUninstall = false;
             InstallDestinationText.Text = "Select a valid game folder to preview the install path.";
             ResetInstallStatusDetails();
 
@@ -208,8 +271,11 @@ public sealed partial class MainWindow : Window
     {
         var normalizedInstallPath = Path.Combine(gamePath, Installer.ModsSubfolder, Installer.ModFolderName);
         InstallDestinationText.Text = normalizedInstallPath;
-        if (_installedPath is null && Directory.Exists(normalizedInstallPath))
+        _canUninstall = Directory.Exists(normalizedInstallPath);
+        if (_installedPath is null && _canUninstall)
             _installedPath = normalizedInstallPath;
+
+        UpdateActionButtons();
     }
 
     private void UpdateProgress(InstallProgress progress)
@@ -234,14 +300,14 @@ public sealed partial class MainWindow : Window
         InstalledTagText.Text = "Checking...";
         LatestTagText.Text = "Checking...";
 
-        if (!_isInstalling)
+        if (!_isBusy)
         {
             InstallStepText.Text = "Checking install status";
             InstallMessageText.Text = "Inspecting the installed files and the latest GitHub tag.";
         }
 
         var status = await Installer.GetInstalledModStatusAsync(gamePath);
-        if (requestVersion != _statusRefreshVersion || _isInstalling)
+        if (requestVersion != _statusRefreshVersion || _isBusy)
             return;
 
         ApplyInstallStatus(status);
@@ -249,6 +315,8 @@ public sealed partial class MainWindow : Window
 
     private void ApplyInstallStatus(InstalledModStatus status)
     {
+        _canUninstall = status.IsInstalled;
+        UpdateActionButtons();
         InstalledTagText.Text = status.InstalledTag ?? (status.IsInstalled ? "Unknown" : "Not installed");
         LatestTagText.Text = status.LatestTag ?? "Unavailable";
 
@@ -292,22 +360,25 @@ public sealed partial class MainWindow : Window
 
     private void ResetInstallStatusDetails()
     {
+        _canUninstall = false;
         InstalledTagText.Text = "Not checked";
         LatestTagText.Text = "Not checked";
         InstallProgressBar.Value = 0;
+        InstallProgressBar.IsIndeterminate = false;
         InstallPercentText.Text = "0%";
         InstallStepText.Text = "Ready to install";
         InstallMessageText.Text = "Use auto-detect or browse to select the game folder, then install the latest tagged loot filter release.";
+        UpdateActionButtons();
     }
 
-    private void SetInstallState(bool isInstalling)
+    private void UpdateActionButtons()
     {
-        InstallButton.IsEnabled = !isInstalling;
-        BrowseButton.IsEnabled = !isInstalling;
-        DetectButton.IsEnabled = !isInstalling;
-        GamePathTextBox.IsEnabled = !isInstalling;
+        InstallButton.IsEnabled = !_isBusy;
+        UninstallButton.IsEnabled = !_isBusy && _canUninstall;
+        BrowseButton.IsEnabled = !_isBusy;
+        DetectButton.IsEnabled = !_isBusy;
+        GamePathTextBox.IsEnabled = !_isBusy;
         InstallProgressBar.ShowPaused = false;
-        InstallProgressBar.IsIndeterminate = false;
     }
 
     private void ShowPathStatus(InfoBarSeverity severity, string title, string message)
