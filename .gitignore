@@ -1,0 +1,35 @@
+# Build output
+**/bin/
+**/obj/
+**/TestResults/
+
+# Visual Studio and IDE files
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Logs and coverage
+*.log
+*.trx
+*.coverage
+*.coveragexml
+
+# Windows app packaging artifacts
+*.appx
+*.appxbundle
+*.appxupload
+*.msix
+*.msixbundle
+*.msixupload
+*.appinstaller
+
+# Dependency folders
+node_modules/
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store

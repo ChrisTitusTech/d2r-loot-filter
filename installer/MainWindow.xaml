@@ -1,0 +1,380 @@
+<Window
+    x:Class="D2RInstaller.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid x:Name="RootGrid">
+        <Image
+            Source="ms-appx:///images/d2-background.jpg"
+            Height="{Binding ElementName=RootGrid, Path=ActualHeight}"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Stretch="UniformToFill" />
+
+        <Rectangle>
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Offset="0.0" Color="#CC080504" />
+                    <GradientStop Offset="0.4" Color="#B31A110D" />
+                    <GradientStop Offset="1.0" Color="#D92B170E" />
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
+        <ScrollViewer
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollBarVisibility="Auto">
+            <Grid
+                MaxWidth="1100"
+                Margin="32"
+                RowSpacing="24">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border
+                    Grid.Row="0"
+                    Padding="28"
+                    CornerRadius="24"
+                    Background="#E0211511"
+                    BorderBrush="#80604431"
+                    BorderThickness="1">
+                    <Grid>
+                        <StackPanel Spacing="2">
+                            <TextBlock
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                CharacterSpacing="180"
+                                Foreground="#C79A57"
+                                Text="SANCTUARY INSTALLER" />
+                            <TextBlock
+                                FontSize="34"
+                                FontWeight="SemiBold"
+                                Foreground="#F2DEC2"
+                                Text="Diablo II: Resurrected Mod Installer" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Grid
+                    Grid.Row="1"
+                    ColumnSpacing="24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2.2*" />
+                        <ColumnDefinition Width="1.2*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Spacing="24">
+                        <Border
+                            Padding="24"
+                            CornerRadius="24"
+                            Background="#D81A110D"
+                            BorderBrush="#6E59402E"
+                            BorderThickness="1">
+                            <StackPanel Spacing="18">
+                                <TextBlock
+                                    FontSize="24"
+                                    FontWeight="SemiBold"
+                                    Foreground="#F2DEC2"
+                                    Text="Game Folder" />
+                                <TextBlock
+                                    TextWrapping="Wrap"
+                                    Foreground="#C7B08E"
+                                    Text="Select the Diablo II: Resurrected installation directory. You can point at the game folder, the mods folder, or the lootfilter folder and the installer will normalize it." />
+
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBox
+                                        x:Name="GamePathTextBox"
+                                        Grid.Column="0"
+                                        Background="#261713"
+                                        BorderBrush="#8A6547"
+                                        Foreground="#F2DEC2"
+                                        Header="Diablo II: Resurrected path"
+                                        PlaceholderText="C:\Program Files (x86)\Diablo II Resurrected"
+                                        TextChanged="GamePathTextBox_TextChanged" />
+
+                                    <Button
+                                        x:Name="DetectButton"
+                                        Grid.Column="1"
+                                        Margin="0,30,0,0"
+                                        Background="#6F4A28"
+                                        BorderBrush="#C79A57"
+                                        BorderThickness="1"
+                                        Foreground="#F2DEC2"
+                                        Click="AutoDetectButton_Click"
+                                        Content="Auto-detect" />
+
+                                    <Button
+                                        x:Name="BrowseButton"
+                                        Grid.Column="2"
+                                        Margin="0,30,0,0"
+                                        Background="#6F4A28"
+                                        BorderBrush="#C79A57"
+                                        BorderThickness="1"
+                                        Foreground="#F2DEC2"
+                                        Click="BrowseButton_Click"
+                                        Content="Browse" />
+                                </Grid>
+
+                                <InfoBar
+                                    x:Name="PathInfoBar"
+                                    IsOpen="False"
+                                    IsClosable="False"
+                                    Severity="Informational" />
+
+                                <Border
+                                    Padding="18"
+                                    CornerRadius="18"
+                                    Background="#180B0807"
+                                    BorderBrush="#594632"
+                                    BorderThickness="1">
+                                    <Grid ColumnSpacing="16">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <FontIcon
+                                            Glyph="&#xE7C3;"
+                                            Foreground="#C79A57"
+                                            FontSize="26"
+                                            VerticalAlignment="Top" />
+
+                                        <StackPanel Grid.Column="1" Spacing="4">
+                                            <TextBlock
+                                                FontSize="14"
+                                                FontWeight="SemiBold"
+                                                CharacterSpacing="100"
+                                                Foreground="#C79A57"
+                                                Text="Install destination" />
+                                            <TextBlock
+                                                x:Name="InstallDestinationText"
+                                                TextWrapping="Wrap"
+                                                Foreground="#F2DEC2"
+                                                Text="Select a valid game folder to preview the install path." />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <Border
+                            Padding="24"
+                            CornerRadius="24"
+                            Background="#D81A110D"
+                            BorderBrush="#6E59402E"
+                            BorderThickness="1">
+                            <StackPanel Spacing="18">
+                                <TextBlock
+                                    FontSize="24"
+                                    FontWeight="SemiBold"
+                                    Foreground="#F2DEC2"
+                                    Text="Install Status" />
+
+                                <Grid ColumnSpacing="16" RowSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock
+                                        Grid.Row="0"
+                                        Grid.Column="0"
+                                        Foreground="#C79A57"
+                                        Text="Installed tag" />
+                                    <TextBlock
+                                        x:Name="InstalledTagText"
+                                        Grid.Row="0"
+                                        Grid.Column="1"
+                                        Foreground="#F2DEC2"
+                                        Text="Not checked" />
+
+                                    <TextBlock
+                                        Grid.Row="1"
+                                        Grid.Column="0"
+                                        Foreground="#C79A57"
+                                        Text="Latest GitHub tag" />
+                                    <TextBlock
+                                        x:Name="LatestTagText"
+                                        Grid.Row="1"
+                                        Grid.Column="1"
+                                        Foreground="#F2DEC2"
+                                        Text="Not checked" />
+                                </Grid>
+
+                                <ProgressBar
+                                    x:Name="InstallProgressBar"
+                                    Height="10"
+                                    Minimum="0"
+                                    Maximum="100"
+                                    Value="0"
+                                    Background="#241612"
+                                    Foreground="#C79A57" />
+
+                                <Grid ColumnSpacing="16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Spacing="4">
+                                        <TextBlock
+                                            x:Name="InstallStepText"
+                                            FontSize="16"
+                                            FontWeight="SemiBold"
+                                            Foreground="#F2DEC2"
+                                            Text="Ready to install" />
+                                        <TextBlock
+                                            x:Name="InstallMessageText"
+                                            TextWrapping="Wrap"
+                                            Foreground="#C7B08E"
+                                            Text="Use auto-detect or browse to select the game folder, then install the latest mods." />
+                                    </StackPanel>
+
+                                    <TextBlock
+                                        x:Name="InstallPercentText"
+                                        Grid.Column="1"
+                                        VerticalAlignment="Top"
+                                        FontSize="28"
+                                        FontWeight="SemiBold"
+                                        Foreground="#C79A57"
+                                        Text="0%" />
+                                </Grid>
+
+                                <InfoBar
+                                    x:Name="InstallInfoBar"
+                                    IsOpen="False"
+                                    IsClosable="False"
+                                    Severity="Informational" />
+
+                                <StackPanel
+                                    Orientation="Horizontal"
+                                    Spacing="12">
+                                    <Button
+                                        x:Name="InstallButton"
+                                        HorizontalAlignment="Left"
+                                        Padding="24,10"
+                                        Background="#6F4A28"
+                                        BorderBrush="#C79A57"
+                                        BorderThickness="1"
+                                        Foreground="#F2DEC2"
+                                        Click="InstallButton_Click"
+                                        Content="Install Mods" />
+                                    <Button
+                                        x:Name="UninstallButton"
+                                        HorizontalAlignment="Left"
+                                        Padding="24,10"
+                                        Background="#442018"
+                                        BorderBrush="#A85743"
+                                        BorderThickness="1"
+                                        Foreground="#F2DEC2"
+                                        Click="UninstallButton_Click"
+                                        Content="Uninstall Mods"
+                                        IsEnabled="False" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Spacing="24">
+                        <Border
+                            Padding="24"
+                            CornerRadius="24"
+                            Background="#D81A110D"
+                            BorderBrush="#6E59402E"
+                            BorderThickness="1">
+                            <StackPanel Spacing="16">
+                                <TextBlock
+                                    FontSize="24"
+                                    FontWeight="SemiBold"
+                                    Foreground="#F2DEC2"
+                                    Text="After Install" />
+                                <TextBlock
+                                    TextWrapping="Wrap"
+                                    Foreground="#C7B08E"
+                                    Text="Launch Diablo II: Resurrected with these arguments enabled in Battle.net or Steam." />
+                                <TextBox
+                                    x:Name="LaunchArgsTextBox"
+                                    IsReadOnly="True"
+                                    FontFamily="Cascadia Mono"
+                                    Background="#261713"
+                                    BorderBrush="#8A6547"
+                                    Foreground="#F2DEC2"
+                                    Text="-mod lootfilter -txt" />
+                                <Button
+                                    Background="#6F4A28"
+                                    BorderBrush="#C79A57"
+                                    BorderThickness="1"
+                                    Foreground="#F2DEC2"
+                                    Click="CopyLaunchArgsButton_Click"
+                                    Content="Copy launch arguments" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border
+                            Padding="24"
+                            CornerRadius="24"
+                            Background="#D81A110D"
+                            BorderBrush="#6E59402E"
+                            BorderThickness="1">
+                            <StackPanel Spacing="14">
+                                <TextBlock
+                                    FontSize="24"
+                                    FontWeight="SemiBold"
+                                    Foreground="#F2DEC2"
+                                    Text="List of Mods Installed" />
+                                <StackPanel Spacing="0">
+                                    <TextBlock
+                                        TextWrapping="Wrap"
+                                        Foreground="#C7B08E"
+                                        Text="- Loot filter" />
+                                    <TextBlock
+                                        TextWrapping="Wrap"
+                                        Foreground="#C7B08E"
+                                        Text="- UI Revamp (EXP bar and minimal art)" />
+                                    <TextBlock
+                                        TextWrapping="Wrap"
+                                        Foreground="#C7B08E"
+                                        Text="- Remove error speech" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border
+                            Padding="24"
+                            CornerRadius="24"
+                            Background="#D81A110D"
+                            BorderBrush="#6E59402E"
+                            BorderThickness="1">
+                            <StackPanel Spacing="14">
+                                <TextBlock
+                                    FontSize="24"
+                                    FontWeight="SemiBold"
+                                    Foreground="#F2DEC2"
+                                    Text="Notes:" />
+                                <TextBlock
+                                    TextWrapping="Wrap"
+                                    Foreground="#C7B08E"
+                                    Text="There are no options from Blizzard to load multiple mods so all these have to be in one package. This means we can't separate out individual mods. I tried to strike a good balance between functionality and simplicity." />
+                                <TextBlock
+                                    TextWrapping="Wrap"
+                                    Foreground="#C7B08E"
+                                    Text="      - Chris Titus Tech" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</Window>
