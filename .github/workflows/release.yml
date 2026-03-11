@@ -7,7 +7,7 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     permissions:
       contents: write
 
@@ -16,6 +16,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
 
       - name: Get latest tag and increment version
         id: version
@@ -43,11 +48,51 @@ jobs:
           echo "skip=false" >> "$GITHUB_OUTPUT"
           echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
           echo "New tag: $NEW_TAG"
+        shell: bash
+
+      - name: Resolve AppX MSBuild tools path
+        if: steps.version.outputs.skip == 'false'
+        shell: pwsh
+        run: |
+          $vsWhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          if (-not (Test-Path $vsWhere)) {
+            throw "vswhere.exe was not found at $vsWhere"
+          }
+
+          $installationPath = & $vsWhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath
+          if (-not $installationPath) {
+            throw 'Visual Studio installation path could not be resolved.'
+          }
+
+          $appxToolsPath = Join-Path $installationPath 'MSBuild\Microsoft\VisualStudio\v17.0\AppxPackage\'
+          if (-not (Test-Path $appxToolsPath)) {
+            throw "AppX MSBuild tools path was not found at $appxToolsPath"
+          }
+
+          "APPX_MSBUILD_TOOLS_PATH=$appxToolsPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Publish installer
+        if: steps.version.outputs.skip == 'false'
+        shell: pwsh
+        run: |
+          $publishDir = Join-Path $env:GITHUB_WORKSPACE '.artifacts\release-installer'
+          $releaseTag = '${{ steps.version.outputs.new_tag }}'
+          $parts = $releaseTag.Split('.')
+          $numericVersion = switch ($parts.Count) {
+            1 { "$releaseTag.0.0.0"; break }
+            2 { "$releaseTag.0.0"; break }
+            3 { "$releaseTag.0"; break }
+            default { ($parts[0..3] -join '.') }
+          }
+
+          Remove-Item $publishDir -Recurse -Force -ErrorAction SilentlyContinue
+          dotnet publish installer/D2RInstaller.csproj --configuration Release -p:Version=$releaseTag -p:InformationalVersion=$releaseTag -p:AssemblyVersion=$numericVersion -p:FileVersion=$numericVersion -p:AppxMSBuildToolsPath=$env:APPX_MSBUILD_TOOLS_PATH -p:PublishDir=$publishDir
 
       - name: Zip lootfilter folder
         if: steps.version.outputs.skip == 'false'
         run: |
-          zip -r titus-mods.zip lootfilter/
+          Compress-Archive -Path lootfilter -DestinationPath titus-mods.zip -Force
+        shell: pwsh
 
       - name: Create and publish release
         if: steps.version.outputs.skip == 'false'
@@ -58,6 +103,10 @@ jobs:
           generate_release_notes: true
           body: |
             **Installation:** Extract `titus-mods.zip` and place the `lootfilter` folder into your Diablo II Resurrected mods directory.
-          files: titus-mods.zip
+
+            **Installer:** Download `D2RInstaller.exe` to run the Windows installer.
+          files: |
+            titus-mods.zip
+            .artifacts/release-installer/D2RInstaller.exe
           draft: false
           prerelease: false

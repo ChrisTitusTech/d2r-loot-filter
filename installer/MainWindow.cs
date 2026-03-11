@@ -20,8 +20,9 @@ public sealed partial class MainWindow : Window
 
     public MainWindow()
     {
-        Title = "D2R Mods Installer";
+        Title = $"D2R Mods Installer {BuildVersion.ReleaseTag}";
         InitializeComponent();
+        InstallerVersionText.Text = $"Release tag {BuildVersion.ReleaseTag}";
         SetWindowIcon();
         ConfigureWindowChrome();
         LaunchMaximized();

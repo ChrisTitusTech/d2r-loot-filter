@@ -87,21 +87,21 @@ public static class Installer
 
     static Installer()
     {
-        HttpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("D2RInstaller", "1.0"));
+        HttpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("D2RInstaller", BuildVersion.UserAgentVersion));
         HttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
     }
 
-    private sealed record GitHubReleaseResponse(
+    internal sealed record GitHubReleaseResponse(
         [property: JsonPropertyName("tag_name")] string TagName,
         [property: JsonPropertyName("zipball_url")] string ZipballUrl,
         [property: JsonPropertyName("assets")] GitHubReleaseAsset[] Assets);
 
-    private sealed record GitHubReleaseAsset(
+    internal sealed record GitHubReleaseAsset(
         [property: JsonPropertyName("name")] string Name,
         [property: JsonPropertyName("browser_download_url")] string BrowserDownloadUrl,
         [property: JsonPropertyName("content_type")] string ContentType);
 
-    private sealed record InstalledReleaseMetadata(
+    internal sealed record InstalledReleaseMetadata(
         string Repository,
         string InstalledTag,
         DateTimeOffset InstalledAtUtc);
@@ -435,7 +435,9 @@ public static class Installer
 
         try
         {
-            var metadata = JsonSerializer.Deserialize<InstalledReleaseMetadata>(File.ReadAllText(metadataPath), JsonSerializerOptions);
+            var metadata = JsonSerializer.Deserialize(
+                File.ReadAllText(metadataPath),
+                InstallerJsonContext.Default.InstalledReleaseMetadata);
             return string.IsNullOrWhiteSpace(metadata?.InstalledTag) ? null : metadata.InstalledTag;
         }
         catch
@@ -454,7 +456,9 @@ public static class Installer
             DateTimeOffset.UtcNow);
 
         var metadataPath = Path.Combine(installPath, InstallMetadataFileName);
-        File.WriteAllText(metadataPath, JsonSerializer.Serialize(metadata, JsonSerializerOptions));
+        File.WriteAllText(
+            metadataPath,
+            JsonSerializer.Serialize(metadata, InstallerJsonContext.Default.InstalledReleaseMetadata));
     }
 
     private static string? FindPackagedModRoot(string extractedRoot)
@@ -513,7 +517,9 @@ public static class Installer
             response.EnsureSuccessStatusCode();
 
             await using var responseStream = await response.Content.ReadAsStreamAsync();
-            var release = await JsonSerializer.DeserializeAsync<GitHubReleaseResponse>(responseStream, JsonSerializerOptions)
+            var release = await JsonSerializer.DeserializeAsync(
+                responseStream,
+                InstallerJsonContext.Default.GitHubReleaseResponse)
                 ?? throw new InvalidOperationException("GitHub latest release response was empty.");
 
             if (string.IsNullOrWhiteSpace(release.TagName))

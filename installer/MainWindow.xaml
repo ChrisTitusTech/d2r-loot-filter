@@ -52,6 +52,10 @@
                                 FontWeight="SemiBold"
                                 Foreground="#F2DEC2"
                                 Text="Diablo II: Resurrected Mod Installer" />
+                            <TextBlock
+                                x:Name="InstallerVersionText"
+                                Foreground="#C7B08E"
+                                Text="Release tag 0.0.0-local" />
                         </StackPanel>
                     </Grid>
                 </Border>
